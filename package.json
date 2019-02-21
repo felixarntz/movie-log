@@ -1,0 +1,64 @@
+{
+  "name": "movie-log",
+  "version": "1.0.0",
+  "description": "Log the movies your watch in WordPress, using IMDB.",
+  "keywords": [
+    "wordpress",
+    "plugin",
+    "movies",
+    "logs",
+    "gutenberg",
+    "blocks"
+  ],
+  "author": {
+    "name": "Felix Arntz",
+    "email": "hello@felix-arntz.me",
+    "url": "https://felix-arntz.me"
+  },
+  "contributors": [
+    {
+      "name": "Felix Arntz",
+      "email": "hello@felix-arntz.me",
+      "url": "https://felix-arntz.me"
+    }
+  ],
+  "homepage": "https://movies.felix-arntz.me",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/felixarntz/felix-arntz.me.git"
+  },
+  "bugs": {
+    "url": "https://github.com/felixarntz/felix-arntz.me/issues"
+  },
+  "license": "GPL-2.0-or-later",
+  "engines": {
+    "node": ">= 8.0.0"
+  },
+  "main": "blocks/index.js",
+  "scripts": {
+    "dev": "cross-env BABEL_ENV=default webpack --watch",
+    "build": "cross-env BABEL_ENV=default NODE_ENV=production webpack"
+  },
+  "devDependencies": {
+    "@wordpress/babel-preset-default": "^1.2.0",
+    "autoprefixer": "8.2.0",
+    "babel-core": "^6.26.3",
+    "babel-eslint": "^8.2.3",
+    "babel-loader": "^7.1.4",
+    "classnames": "^2.2.5",
+    "cross-env": "^5.1.5",
+    "css-loader": "^0.28.11",
+    "eslint": "^4.19.1",
+    "eslint-plugin-react": "^7.10.0",
+    "eslint-config-wordpress": "^2.0.0",
+    "extract-text-webpack-plugin": "^3.0.2",
+    "lodash": "^4.17.10",
+    "memize": "^1.0.5",
+    "node-sass": "^4.9.0",
+    "postcss-loader": "^2.1.5",
+    "raw-loader": "^0.5.1",
+    "sass-loader": "^6.0.7",
+    "style-loader": "^0.19.1",
+    "webpack": "^3.11.0"
+  }
+}

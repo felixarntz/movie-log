@@ -1,0 +1,29 @@
+.movie-log-entry {
+	display: block;
+
+	&-poster {
+		width: 200px;
+		margin: 0 auto 15px;
+		padding: 8px;
+		background-color: rgba(0, 0, 0, 0.065);
+
+		a,
+		img {
+			display: block;
+		}
+	}
+
+	@media (min-width: 640px) {
+		display: flex;
+		align-items: flex-start;
+		justify-content: flex-start;
+
+		&-poster {
+			margin: 0 15px 0 0;
+		}
+
+		&-info {
+			flex: 1;
+		}
+	}
+}
