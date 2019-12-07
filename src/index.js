@@ -1,4 +1,4 @@
-import movie from './movie';
+import movie from './blocks/movie';
 
 const { registerBlockType } = wp.blocks;
 

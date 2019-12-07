@@ -43,28 +43,22 @@ function register_blocks() {
 	}
 
 	// Register server-side block types.
-	foreach ( glob( plugin_dir_path( __FILE__ ) . 'blocks/*/index.php' ) as $block_type_file ) {
+	foreach ( glob( plugin_dir_path( __FILE__ ) . 'src/blocks/*/index.php' ) as $block_type_file ) {
 		$block_type = require $block_type_file;
 
 		register_block_type( $block_type['name'], $block_type['settings'] );
 	}
 
 	// Register block assets.
-	$assets_url = plugin_dir_url( __FILE__ ) . 'build/';
+	$script_dependencies = array( 'wp-polyfill' );
+	if ( file_exists( plugin_dir_path( __FILE__ ) . 'build/index.deps.json' ) ) {
+		$script_dependencies = json_decode( file_get_contents( plugin_dir_path( __FILE__ ) . 'build/index.deps.json' ) );
+	}
 
 	wp_register_script(
 		'movie-log-blocks',
-		$assets_url . 'blocks.js',
-		array(
-			'wp-i18n',
-			'wp-api-fetch',
-			'wp-compose',
-			'wp-url',
-			'wp-blocks',
-			'wp-data',
-			'wp-element',
-			'wp-components',
-		),
+		plugin_dir_url( __FILE__ ) . 'build/index.js',
+		$script_dependencies,
 		'1.0.0',
 		true
 	);
@@ -77,7 +71,7 @@ function register_blocks() {
 
 	wp_register_style(
 		'movie-log-blocks',
-		$assets_url . 'blocks.css',
+		plugin_dir_url( __FILE__ ) . 'build/style.css',
 		array(),
 		'1.0.0'
 	);

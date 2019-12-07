@@ -1,7 +1,7 @@
 import './style.scss';
 
-const { Component, Fragment } = wp.element;
-const {
+import { Component, Fragment } from '@wordpress/element';
+import {
 	PanelBody,
 	Button,
 	TextControl,
@@ -9,33 +9,33 @@ const {
 	ServerSideRender,
 	Placeholder,
 	Spinner,
-} = wp.components;
-const {
+} from '@wordpress/components';
+import {
 	InspectorControls,
-} = wp.editor;
-const {
-	apiFetch,
-} = wp;
-const {
+} from '@wordpress/editor';
+import apiFetch from '@wordpress/api-fetch';
+import {
 	addQueryArgs,
-} = wp.url;
-const {
+} from '@wordpress/url';
+import {
 	withSelect,
 	withDispatch,
-} = wp.data;
-const {
+} from '@wordpress/data';
+import {
 	compose,
-} = wp.compose;
-const {
+} from '@wordpress/compose';
+import {
 	date,
-} = wp.date;
-const { __, _x } = wp.i18n;
-const {
+} from '@wordpress/date';
+import { __, _x } from '@wordpress/i18n';
+import {
+	escape,
 	find,
 	get,
 	map,
 	uniqBy,
-} = lodash;
+	unescape,
+} from 'lodash';
 
 const DEFAULT_QUERY = {
 	per_page: -1,
@@ -47,7 +47,7 @@ const isSameTermName = ( termA, termB ) => termA.toLowerCase() === termB.toLower
 const unescapeTerm = ( term ) => {
 	return {
 		...term,
-		name: lodash.unescape( term.name ),
+		name: unescape( term.name ),
 	};
 };
 const unescapeTerms = ( terms ) => {
@@ -63,11 +63,11 @@ class MovieEdit extends Component {
 			searchTerm: undefined,
 		};
 
-		this.reset            = this.reset.bind( this );
-		this.isImdbId         = this.isImdbId.bind( this );
-		this.onInputChange    = this.onInputChange.bind( this );
-		this.onButtonClick    = this.onButtonClick.bind( this );
-		this.updateTerms      = this.updateTerms.bind( this );
+		this.reset = this.reset.bind( this );
+		this.isImdbId = this.isImdbId.bind( this );
+		this.onInputChange = this.onInputChange.bind( this );
+		this.onButtonClick = this.onButtonClick.bind( this );
+		this.updateTerms = this.updateTerms.bind( this );
 		this.findOrCreateTerm = this.findOrCreateTerm.bind( this );
 	}
 
@@ -112,9 +112,9 @@ class MovieEdit extends Component {
 			isLoading: true,
 		} );
 
-		const search   = this.state.searchTerm;
+		const search = this.state.searchTerm;
 		const endpoint = '/movie-log/v1/imdb-proxy' + ( this.isImdbId( search ) ? `/${ search }` : '' );
-		const args     = this.isImdbId( search ) ? {} : { search };
+		const args = this.isImdbId( search ) ? {} : { search };
 
 		const fetchRequest = this.currentFetchRequest = apiFetch( {
 			path: addQueryArgs( endpoint, args ),
@@ -129,7 +129,7 @@ class MovieEdit extends Component {
 						this.reset();
 						return;
 					}
-					data = data[0];
+					data = data[ 0 ];
 				}
 
 				const { setAttributes, setPostTitle, setPostGenreTerms, canCreateGenreTerms, canAssignGenreTerms, genreTaxonomy } = this.props;
@@ -142,7 +142,7 @@ class MovieEdit extends Component {
 				setPostTitle( Title );
 				if ( canCreateGenreTerms && canAssignGenreTerms ) {
 					this.updateTerms(
-						Genre.split( ', ' ).map( elem => elem.trim() ),
+						Genre.split( ', ' ).map( ( elem ) => elem.trim() ),
 						genreTaxonomy,
 						setPostGenreTerms
 					);
@@ -176,7 +176,7 @@ class MovieEdit extends Component {
 	}
 
 	findOrCreateTerm( termName, taxonomy ) {
-		const termNameEscaped = lodash.escape( termName );
+		const termNameEscaped = escape( termName );
 		// Tries to create a term or fetch it if it already exists.
 		return apiFetch( {
 			path: `/wp/v2/${ taxonomy.rest_base }`,

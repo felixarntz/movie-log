@@ -1,59 +1,43 @@
+const config = require( './node_modules/@wordpress/scripts/config/webpack.config.js' );
+
 const path = require( 'path' );
-const webpack = require( 'webpack' );
-const ExtractTextPlugin = require( 'extract-text-webpack-plugin' );
 
-// Set different CSS extraction for editor only and common block styles
-const blocksCSSPlugin = new ExtractTextPlugin( {
-	filename: './build/blocks.css',
-} );
+const MiniCssExtractPlugin = require( 'mini-css-extract-plugin' );
 
-// Configuration for the ExtractTextPlugin.
-const extractConfig = {
-	use: [
-		{ loader: 'raw-loader' },
-		{
-			loader: 'postcss-loader',
-			options: {
-				plugins: [ require( 'autoprefixer' ) ],
-			},
-		},
-		{
-			loader: 'sass-loader',
-			query: {
-				outputStyle:
-					'production' === process.env.NODE_ENV ? 'compressed' : 'nested',
-			},
-		},
-	],
-};
-
-
-module.exports = {
-	entry: {
-		'./build/blocks' : './blocks/index.js',
-	},
-	output: {
-		path: path.resolve( __dirname ),
-		filename: '[name].js',
-	},
-	watch: true,
-	devtool: 'cheap-eval-source-map',
-	module: {
-		rules: [
+config.module = config.module || {};
+config.module.rules = [
+	...( config.module.rules || [] ),
+	{
+		test: /\.s?css$/,
+		use: [
 			{
-				test: /\.js$/,
-				exclude: /(node_modules|bower_components)/,
-				use: {
-					loader: 'babel-loader',
+				loader: MiniCssExtractPlugin.loader,
+				options: {
+					hmr: process.env.NODE_ENV === 'development',
 				},
 			},
+			'css-loader',
 			{
-				test: /style\.s?css$/,
-				use: blocksCSSPlugin.extract( extractConfig ),
+				loader: 'sass-loader',
+				options: {
+					webpackImporter: false,
+					sassOptions: {
+						includePaths: [
+							path.resolve( __dirname, 'node_modules' ),
+						],
+						outputStyle: 'production' === process.env.NODE_ENV ? 'compressed' : 'nested',
+					},
+				},
 			},
 		],
 	},
-	plugins: [
-		blocksCSSPlugin,
-	],
-};
+];
+
+config.plugins = [
+	...( config.plugins || [] ),
+	new MiniCssExtractPlugin( {
+		filename: './style.css',
+	} ),
+];
+
+module.exports = config;

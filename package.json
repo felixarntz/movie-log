@@ -12,13 +12,13 @@
   ],
   "author": {
     "name": "Felix Arntz",
-    "email": "hello@felix-arntz.me",
+    "email": "flixos90@gmail.com",
     "url": "https://felix-arntz.me"
   },
   "contributors": [
     {
       "name": "Felix Arntz",
-      "email": "hello@felix-arntz.me",
+      "email": "flixos90@gmail.com",
       "url": "https://felix-arntz.me"
     }
   ],
@@ -34,31 +34,28 @@
   "engines": {
     "node": ">= 8.0.0"
   },
-  "main": "blocks/index.js",
+  "main": "src/index.js",
   "scripts": {
-    "dev": "cross-env BABEL_ENV=default webpack --watch",
-    "build": "cross-env BABEL_ENV=default NODE_ENV=production webpack"
+    "build": "wp-scripts build",
+    "check-engines": "wp-scripts check-engines",
+    "check-licenses": "wp-scripts check-licenses",
+    "lint:css": "wp-scripts lint-style",
+    "lint:js": "wp-scripts lint-js",
+    "lint:pkg-json": "wp-scripts lint-pkg-json",
+    "start": "wp-scripts start",
+    "test:e2e": "wp-scripts test-e2e",
+    "test:unit": "wp-scripts test-unit-js"
   },
   "devDependencies": {
-    "@wordpress/babel-preset-default": "^1.2.0",
-    "autoprefixer": "8.2.0",
-    "babel-core": "^6.26.3",
-    "babel-eslint": "^8.2.3",
-    "babel-loader": "^7.1.4",
-    "classnames": "^2.2.5",
-    "cross-env": "^5.1.5",
-    "css-loader": "^0.28.11",
-    "eslint": "^4.19.1",
-    "eslint-plugin-react": "^7.10.0",
-    "eslint-config-wordpress": "^2.0.0",
-    "extract-text-webpack-plugin": "^3.0.2",
-    "lodash": "^4.17.10",
+    "@wordpress/scripts": "^4.1.0",
+    "autoprefixer": "^9.6.1",
+    "classnames": "^2.2.6",
+    "css-loader": "^3.2.0",
     "memize": "^1.0.5",
-    "node-sass": "^4.9.0",
-    "postcss-loader": "^2.1.5",
-    "raw-loader": "^0.5.1",
-    "sass-loader": "^6.0.7",
-    "style-loader": "^0.19.1",
-    "webpack": "^3.11.0"
+    "mini-css-extract-plugin": "^0.8.0",
+    "node-sass": "^4.12.0",
+    "postcss-loader": "^3.0.0",
+    "raw-loader": "^3.1.0",
+    "sass-loader": "^8.0.0"
   }
 }
