@@ -82,14 +82,16 @@ function register_blocks() {
 		function() {
 			wp_enqueue_script( 'movie-log-blocks' );
 			wp_enqueue_style( 'movie-log-blocks' );
-		}
+		},
+		11
 	);
 
 	add_action(
 		'enqueue_block_assets',
 		function() {
 			wp_enqueue_style( 'movie-log-blocks' );
-		}
+		},
+		11
 	);
 }
 add_action( 'init', __NAMESPACE__ . '\\register_blocks', 100 );
