@@ -1,5 +1,5 @@
 import { registerBlockType, createBlock } from '@wordpress/blocks';
-import { select, dispatch } from '@wordpress/data';
+import { dispatch } from '@wordpress/data';
 
 import movie from './blocks/movie';
 
@@ -25,17 +25,9 @@ if ( global.wp.shareTarget && global.wp.shareTarget.registerShareHandler ) {
 				}
 			}
 
-			const imdbId = matches[ 1 ];
-
-			const meta = select( 'core/editor' ).getEditedPostAttribute( 'meta' );
-			dispatch( 'core/editor' ).editPost( { meta: {
-				...meta,
-				imdb_id: imdbId,
-			} } );
-
 			dispatch( 'core/block-editor' ).insertBlocks( [
 				createBlock( 'movie-log/movie', {
-					imdbId,
+					imdbId: matches[ 1 ],
 				} ),
 			] );
 			return true;

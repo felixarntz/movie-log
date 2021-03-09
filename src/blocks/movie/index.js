@@ -1,6 +1,11 @@
-import './style.scss';
+/**
+ * External dependencies
+ */
+import { get } from 'lodash';
 
-import { Component, Fragment } from '@wordpress/element';
+/**
+ * WordPress dependencies
+ */
 import {
 	PanelBody,
 	Button,
@@ -13,231 +18,107 @@ import {
 import {
 	InspectorControls,
 } from '@wordpress/editor';
-import apiFetch from '@wordpress/api-fetch';
 import {
-	addQueryArgs,
-} from '@wordpress/url';
-import {
-	withSelect,
-	withDispatch,
+	useSelect,
+	useDispatch,
 } from '@wordpress/data';
 import {
-	compose,
-} from '@wordpress/compose';
-import {
-	date,
-} from '@wordpress/date';
+	Fragment,
+	useState,
+	useEffect,
+} from '@wordpress/element';
+import { date } from '@wordpress/date';
 import { __, _x } from '@wordpress/i18n';
-import {
-	escape,
-	find,
-	get,
-	map,
-	uniqBy,
-	unescape,
-} from 'lodash';
 
-const DEFAULT_QUERY = {
-	per_page: -1,
-	orderby: 'count',
-	order: 'desc',
-	_fields: 'id,name',
-};
-const isSameTermName = ( termA, termB ) => termA.toLowerCase() === termB.toLowerCase();
-const unescapeTerm = ( term ) => {
-	return {
-		...term,
-		name: unescape( term.name ),
+/**
+ * Internal dependencies
+ */
+import getMovieData from '../../util/getMovieData';
+import updatePostWithMovie from '../../util/updatePostWithMovie';
+import './style.scss';
+
+function MovieEdit( props ) {
+	const { attributes, setAttributes } = props;
+	const { imdbId } = attributes;
+
+	const post = useSelect( ( select ) => select( 'core/editor' ).getCurrentPost() );
+	const postMeta = useSelect( ( select ) => select( 'core/editor' ).getEditedPostAttribute( 'meta' ) );
+	const genreTaxonomy = useSelect( ( select ) => select( 'core' ).getTaxonomy( window.movieLogSettings.genreTaxonomy ) );
+
+	const canCreateGenreTerms = genreTaxonomy ? get( post, [ '_links', 'wp:action-create-' + genreTaxonomy.rest_base ], false ) : false;
+	const canAssignGenreTerms = genreTaxonomy ? get( post, [ '_links', 'wp:action-assign-' + genreTaxonomy.rest_base ], false ) : false;
+
+	const [ searchTerm, setSearchTerm ] = useState( undefined );
+	const [ isLoading, setIsLoading ] = useState( false );
+
+	const { editPost } = useDispatch( 'core/editor' );
+
+	const onButtonClick = async () => {
+		if ( isLoading || ! searchTerm ) {
+			return;
+		}
+		setIsLoading( true );
+		try {
+			const data = await getMovieData( searchTerm );
+			setAttributes( {
+				imdbId: data.imdbID,
+				imdbReleaseDate: date( 'Y-m-d', data.Released ),
+			} );
+			setSearchTerm( undefined );
+			setIsLoading( false );
+		} catch ( error ) {
+			setIsLoading( false );
+			throw error;
+		}
 	};
-};
-const unescapeTerms = ( terms ) => {
-	return map( terms, unescapeTerm );
-};
 
-class MovieEdit extends Component {
-	constructor() {
-		super( ...arguments );
-
-		this.state = {
-			isLoading: false,
-			searchTerm: undefined,
-		};
-
-		this.reset = this.reset.bind( this );
-		this.isImdbId = this.isImdbId.bind( this );
-		this.onInputChange = this.onInputChange.bind( this );
-		this.onButtonClick = this.onButtonClick.bind( this );
-		this.updateTerms = this.updateTerms.bind( this );
-		this.findOrCreateTerm = this.findOrCreateTerm.bind( this );
-	}
-
-	componentDidMount() {
-		this.isStillMounted = true;
-	}
-
-	componentWillUnmount() {
-		this.isStillMounted = false;
-	}
-
-	reset() {
-		this.setState( {
-			isLoading: false,
-			searchTerm: undefined,
-		} );
-	}
-
-	isImdbId( searchTerm ) {
-		if ( ( searchTerm || this.state.searchTerm ).match( /^tt\d+$/ ) ) {
-			return true;
-		}
-		return false;
-	}
-
-	onInputChange( value ) {
-		this.setState( {
-			searchTerm: value,
-		} );
-	}
-
-	onButtonClick() {
-		if ( ! this.isStillMounted ) {
+	useEffect( () => {
+		if ( ! imdbId || ! canCreateGenreTerms || ! canAssignGenreTerms ) {
 			return;
 		}
-
-		if ( this.state.isLoading ) {
-			return;
-		}
-
-		this.setState( {
-			isLoading: true,
-		} );
-
-		const search = this.state.searchTerm;
-		const endpoint = '/movie-log/v1/imdb-proxy' + ( this.isImdbId( search ) ? `/${ search }` : '' );
-		const args = this.isImdbId( search ) ? {} : { search };
-
-		const fetchRequest = this.currentFetchRequest = apiFetch( {
-			path: addQueryArgs( endpoint, args ),
-		} )
-			.then( ( data ) => {
-				if ( ! this.isStillMounted || fetchRequest !== this.currentFetchRequest ) {
-					return;
-				}
-
-				if ( ! this.isImdbId( search ) ) {
-					if ( ! data.length ) {
-						this.reset();
-						return;
-					}
-					data = data[ 0 ];
-				}
-
-				const { setAttributes, setPostTitle, setPostGenreTerms, canCreateGenreTerms, canAssignGenreTerms, genreTaxonomy } = this.props;
-				const { imdbID, Released, Title, Genre } = data;
-
-				setAttributes( {
-					imdbId: imdbID,
-					imdbReleaseDate: date( 'Y-m-d', Released ),
-				} );
-				setPostTitle( Title );
-				if ( canCreateGenreTerms && canAssignGenreTerms ) {
-					this.updateTerms(
-						Genre.split( ', ' ).map( ( elem ) => elem.trim() ),
-						genreTaxonomy,
-						setPostGenreTerms
-					);
-				}
-
-				this.reset();
-			} )
-			.catch( () => {
-				if ( ! this.isStillMounted || fetchRequest !== this.currentFetchRequest ) {
-					return;
-				}
-
-				this.reset();
-			} );
-	}
-
-	updateTerms( termNames, taxonomy, setTerms ) {
-		const uniqueTerms = uniqBy( termNames, ( term ) => term.toLowerCase() );
-		const findOrCreateTerm = ( termName ) => {
-			return this.findOrCreateTerm( termName, taxonomy );
-		};
-
-		Promise
-			.all( uniqueTerms.map( findOrCreateTerm ) )
-			.then( ( newTerms ) => {
-				return setTerms(
-					map( newTerms, ( term ) => term.id ),
-					taxonomy.rest_base
-				);
-			} );
-	}
-
-	findOrCreateTerm( termName, taxonomy ) {
-		const termNameEscaped = escape( termName );
-		// Tries to create a term or fetch it if it already exists.
-		return apiFetch( {
-			path: `/wp/v2/${ taxonomy.rest_base }`,
-			method: 'POST',
-			data: { name: termNameEscaped },
-		} ).catch( ( error ) => {
-			const errorCode = error.code;
-			if ( errorCode === 'term_exists' ) {
-				// If the terms exist, fetch it instead of creating a new one.
-				this.addRequest = apiFetch( {
-					path: addQueryArgs( `/wp/v2/${ taxonomy.rest_base }`, { ...DEFAULT_QUERY, search: termNameEscaped } ),
-				} ).then( unescapeTerms );
-				return this.addRequest.then( ( searchResult ) => {
-					return find( searchResult, ( result ) => isSameTermName( result.name, termName ) );
-				} );
+		( async () => {
+			setIsLoading( true );
+			try {
+				const data = await getMovieData( imdbId );
+				await updatePostWithMovie( data, editPost, genreTaxonomy, postMeta );
+				setIsLoading( false );
+			} catch ( error ) {
+				setIsLoading( false );
+				throw error;
 			}
-			return Promise.reject( error );
-		} ).then( unescapeTerm );
-	}
+		} )();
+	}, [ imdbId, canCreateGenreTerms, canAssignGenreTerms ] );
 
-	render() {
-		const { attributes } = this.props;
-		const { imdbId } = attributes;
-
-		if ( ! this.state.searchTerm && imdbId ) {
-			this.setState( {
-				searchTerm: imdbId,
-			} );
-		}
-
-		return (
-			<Fragment>
-				<InspectorControls>
-					<PanelBody title={ __( 'Movie Settings', 'movie-log' ) }>
-						<TextControl
-							label={ __( 'IMDB ID / Search Term', 'movie-log' ) }
-							value={ this.state.searchTerm || imdbId }
-							onChange={ this.onInputChange }
-						/>
-						<Button
-							isDefault
-							onClick={ this.onButtonClick }
-							disabled={ this.state.isLoading }
-						>
-							{ __( 'Update', 'movie-log' ) }
-						</Button>
-						{ this.state.isLoading && <Spinner /> }
-					</PanelBody>
-				</InspectorControls>
-				{ ! imdbId && <Placeholder>
-					{ __( 'Enter a movie title in the sidebar!', 'movie-log' ) }
-				</Placeholder> }
-				{ imdbId && <Disabled>
-					<ServerSideRender
-						block={ name }
-						attributes={ attributes }
+	return (
+		<Fragment>
+			<InspectorControls>
+				<PanelBody title={ __( 'Movie Settings', 'movie-log' ) }>
+					<TextControl
+						label={ __( 'IMDB ID / Search Term', 'movie-log' ) }
+						value={ searchTerm || imdbId }
+						onChange={ setSearchTerm }
 					/>
-				</Disabled> }
-			</Fragment>
-		);
-	}
+					<Button
+						isDefault
+						onClick={ onButtonClick }
+						disabled={ isLoading }
+					>
+						{ __( 'Update', 'movie-log' ) }
+					</Button>
+					{ isLoading && <Spinner /> }
+				</PanelBody>
+			</InspectorControls>
+			{ ! imdbId && <Placeholder>
+				{ __( 'Enter a movie title in the sidebar!', 'movie-log' ) }
+			</Placeholder> }
+			{ imdbId && <Disabled>
+				<ServerSideRender
+					block={ name }
+					attributes={ attributes }
+				/>
+			</Disabled> }
+		</Fragment>
+	);
 }
 
 const name = 'movie-log/movie';
@@ -267,28 +148,7 @@ const settings = {
 			meta: 'imdb_release_date',
 		},
 	},
-	edit: compose(
-		withSelect( ( select ) => {
-			const { getCurrentPost } = select( 'core/editor' );
-			const { getTaxonomy } = select( 'core' );
-			const taxonomy = getTaxonomy( window.movieLogSettings.genreTaxonomy );
-			return {
-				canCreateGenreTerms: taxonomy ? get( getCurrentPost(), [ '_links', 'wp:action-create-' + taxonomy.rest_base ], false ) : false,
-				canAssignGenreTerms: taxonomy ? get( getCurrentPost(), [ '_links', 'wp:action-assign-' + taxonomy.rest_base ], false ) : false,
-				genreTaxonomy: taxonomy,
-			};
-		} ),
-		withDispatch( ( dispatch ) => {
-			return {
-				setPostTitle( title ) {
-					dispatch( 'core/editor' ).editPost( { title } );
-				},
-				setPostGenreTerms( terms, restBase ) {
-					dispatch( 'core/editor' ).editPost( { [ restBase ]: terms } );
-				},
-			};
-		} )
-	)( MovieEdit ),
+	edit: MovieEdit,
 	save: () => {
 		return null;
 	},
