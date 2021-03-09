@@ -57,9 +57,13 @@ function MovieEdit( props ) {
 		if ( isLoading || ! searchTerm ) {
 			return;
 		}
+
+		const abortController = new global.AbortController();
+		const signal = abortController.signal;
+
 		setIsLoading( true );
 		try {
-			const data = await getMovieData( searchTerm );
+			const data = await getMovieData( searchTerm, { signal } );
 			setAttributes( {
 				imdbId: data.imdbID,
 				imdbReleaseDate: date( 'Y-m-d', data.Released ),
@@ -68,7 +72,9 @@ function MovieEdit( props ) {
 			setIsLoading( false );
 		} catch ( error ) {
 			setIsLoading( false );
-			throw error;
+			if ( ! signal.aborted ) {
+				throw error;
+			}
 		}
 	};
 
@@ -76,17 +82,27 @@ function MovieEdit( props ) {
 		if ( ! imdbId || ! canCreateGenreTerms || ! canAssignGenreTerms ) {
 			return;
 		}
+
+		const abortController = new global.AbortController();
+		const signal = abortController.signal;
+
 		( async () => {
 			setIsLoading( true );
 			try {
-				const data = await getMovieData( imdbId );
-				await updatePostWithMovie( data, editPost, genreTaxonomy, post, postMeta );
+				const data = await getMovieData( imdbId, { signal } );
+				await updatePostWithMovie( data, editPost, genreTaxonomy, post, postMeta, { signal } );
 				setIsLoading( false );
 			} catch ( error ) {
 				setIsLoading( false );
-				throw error;
+				if ( ! signal.aborted ) {
+					throw error;
+				}
 			}
 		} )();
+
+		return () => {
+			abortController.abort();
+		};
 	}, [ imdbId, canCreateGenreTerms, canAssignGenreTerms ] );
 
 	return (

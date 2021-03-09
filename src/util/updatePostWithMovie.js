@@ -13,7 +13,7 @@ import { date } from '@wordpress/date';
  */
 import findOrCreateTerm from './findOrCreateTerm';
 
-export default function updatePostWithMovie( data, editPost, genreTaxonomy, post = {}, meta = {} ) {
+export default function updatePostWithMovie( data, editPost, genreTaxonomy, post = {}, meta = {}, { signal } = {} ) {
 	const { imdbID, Released, Title, Genre } = data;
 
 	// Basic check to not make updates if post already has the data for the selected movie.
@@ -28,7 +28,7 @@ export default function updatePostWithMovie( data, editPost, genreTaxonomy, post
 
 	return Promise
 		.all( uniqueTerms.map( ( termName ) => {
-			return findOrCreateTerm( termName, genreTaxonomy );
+			return findOrCreateTerm( termName, genreTaxonomy, { signal } );
 		} ) )
 		.then( ( newTerms ) => {
 			return editPost( {

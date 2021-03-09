@@ -6,7 +6,7 @@ import { addQueryArgs } from '@wordpress/url';
 
 const cache = {};
 
-export default async function getMovieData( search ) {
+export default async function getMovieData( search, { signal } = {} ) {
 	let endpoint, args;
 
 	if ( isImdbID( search ) ) {
@@ -22,6 +22,7 @@ export default async function getMovieData( search ) {
 
 	const data = await apiFetch( {
 		path: addQueryArgs( endpoint, args ),
+		signal,
 	} )
 
 	// If a search query, return the first result.
