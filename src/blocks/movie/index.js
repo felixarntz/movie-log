@@ -80,7 +80,7 @@ function MovieEdit( props ) {
 			setIsLoading( true );
 			try {
 				const data = await getMovieData( imdbId );
-				await updatePostWithMovie( data, editPost, genreTaxonomy, postMeta );
+				await updatePostWithMovie( data, editPost, genreTaxonomy, post, postMeta );
 				setIsLoading( false );
 			} catch ( error ) {
 				setIsLoading( false );
