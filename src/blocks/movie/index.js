@@ -11,10 +11,10 @@ import {
 	Button,
 	TextControl,
 	Disabled,
-	ServerSideRender,
 	Placeholder,
 	Spinner,
 } from '@wordpress/components';
+import ServerSideRender from '@wordpress/server-side-render';
 import {
 	InspectorControls,
 } from '@wordpress/editor';
@@ -99,7 +99,7 @@ function MovieEdit( props ) {
 						onChange={ setSearchTerm }
 					/>
 					<Button
-						isDefault
+						isSecondary
 						onClick={ onButtonClick }
 						disabled={ isLoading }
 					>
