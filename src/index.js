@@ -1,5 +1,5 @@
 import { registerBlockType, createBlock } from '@wordpress/blocks';
-import { dispatch } from '@wordpress/data';
+import { select, dispatch } from '@wordpress/data';
 
 import movie from './blocks/movie';
 
@@ -25,11 +25,31 @@ if ( global.wp.shareTarget && global.wp.shareTarget.registerShareHandler ) {
 				}
 			}
 
-			dispatch( 'core/block-editor' ).insertBlocks( [
-				createBlock( 'movie-log/movie', {
+			// Update post meta since the block requires it.
+			const meta = select( 'core/editor' ).getEditedPostAttribute( 'meta' );
+			dispatch( 'core/editor' ).editPost( {
+				meta: {
+					...meta,
+					imdb_id: matches[ 1 ],
+				},
+			} );
+
+			// Update or create the actual block.
+			const blocks = select( 'core/block-editor' ).getBlocks();
+			const clientId = blocks?.find( ( block ) => block.name === 'movie-log/movie' )?.clientId;
+			if ( clientId ) {
+				const attributes = select( 'core/block-editor' ).getBlockAttributes( clientId ) || {};
+				dispatch( 'core/block-editor' ).updateBlockAttributes( clientId, {
+					...attributes,
 					imdbId: matches[ 1 ],
-				} ),
-			] );
+				} );
+			} else {
+				dispatch( 'core/block-editor' ).insertBlocks( [
+					createBlock( 'movie-log/movie', {
+						imdbId: matches[ 1 ],
+					} ),
+				] );
+			}
 			return true;
 		},
 		priority: 5,
