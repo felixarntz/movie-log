@@ -23,7 +23,3 @@ This is a heavily custom plugin I built for [my personal movie log](https://movi
 * Optional steps:
     * Define a `MOVIE_LOG_POST_TYPE` constant with the post type the plugin should use. For that post type, it will automatically set a block template and tie in with it in various other ways. The default value for the constant is `post`.
     * Define a `MOVIE_LOG_GENRE_TAXONOMY` constant with the taxonomy the plugin should use for genres. The taxonomy provided must be connected to the post type set via `MOVIE_LOG_POST_TYPE`. The default value for the constant is `category`.
-
-## Extra Credit
-
-The Webpack configuration is based on [Zac Gordon's Gutenberg plugin setup](https://github.com/zgordon/advanced-gutenberg-course).
