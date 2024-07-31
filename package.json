@@ -1,61 +1,14 @@
 {
-  "name": "movie-log",
-  "version": "1.0.0",
-  "description": "Log the movies your watch in WordPress, using IMDB.",
-  "keywords": [
-    "wordpress",
-    "plugin",
-    "movies",
-    "logs",
-    "gutenberg",
-    "blocks"
-  ],
-  "author": {
-    "name": "Felix Arntz",
-    "email": "flixos90@gmail.com",
-    "url": "https://felix-arntz.me"
-  },
-  "contributors": [
-    {
-      "name": "Felix Arntz",
-      "email": "flixos90@gmail.com",
-      "url": "https://felix-arntz.me"
-    }
-  ],
-  "homepage": "https://movies.felix-arntz.me",
-  "repository": {
-    "type": "git",
-    "url": "git://github.com/felixarntz/felix-arntz.me.git"
-  },
-  "bugs": {
-    "url": "https://github.com/felixarntz/felix-arntz.me/issues"
-  },
-  "license": "GPL-2.0-or-later",
-  "engines": {
-    "node": ">= 8.0.0"
-  },
-  "main": "src/index.js",
-  "scripts": {
-    "build": "wp-scripts build",
-    "check-engines": "wp-scripts check-engines",
-    "check-licenses": "wp-scripts check-licenses",
-    "lint:css": "wp-scripts lint-style",
-    "lint:js": "wp-scripts lint-js",
-    "lint:pkg-json": "wp-scripts lint-pkg-json",
-    "start": "wp-scripts start",
-    "test:e2e": "wp-scripts test-e2e",
-    "test:unit": "wp-scripts test-unit-js"
-  },
-  "devDependencies": {
-    "@wordpress/scripts": "^4.1.0",
-    "autoprefixer": "^9.6.1",
-    "classnames": "^2.2.6",
-    "css-loader": "^3.2.0",
-    "memize": "^1.0.5",
-    "mini-css-extract-plugin": "^0.8.0",
-    "node-sass": "^4.12.0",
-    "postcss-loader": "^3.0.0",
-    "raw-loader": "^3.1.0",
-    "sass-loader": "^8.0.0"
-  }
+	"name": "movie-log",
+	"license": "GPL-2.0-or-later",
+	"repository": "git+https://github.com/felixarntz/felix-arntz.me.git",
+	"devDependencies": {
+		"@wordpress/scripts": "^28.4.0",
+		"fast-glob": "^3.3.2"
+	},
+	"scripts": {
+		"build": "wp-scripts build",
+		"format-js": "wp-scripts format",
+		"lint-js": "wp-scripts lint-js"
+	}
 }

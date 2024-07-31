@@ -23,7 +23,7 @@ export default async function getMovieData( search, { signal } = {} ) {
 	const data = await apiFetch( {
 		path: addQueryArgs( endpoint, args ),
 		signal,
-	} )
+	} );
 
 	// If a search query, return the first result.
 	if ( ! isImdbID( search ) ) {

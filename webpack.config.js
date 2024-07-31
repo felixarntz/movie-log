@@ -1,43 +1,36 @@
-const config = require( './node_modules/@wordpress/scripts/config/webpack.config.js' );
+const config = require( '@wordpress/scripts/config/webpack.config' );
 
+const { sync: glob } = require( 'fast-glob' );
 const path = require( 'path' );
+const { getWebpackEntryPoints } = require( '@wordpress/scripts/utils' );
 
-const MiniCssExtractPlugin = require( 'mini-css-extract-plugin' );
+function getEntryPoints() {
+	const getOriginalEntryPoints = getWebpackEntryPoints( 'script' );
 
-config.module = config.module || {};
-config.module.rules = [
-	...( config.module.rules || [] ),
-	{
-		test: /\.s?css$/,
-		use: [
-			{
-				loader: MiniCssExtractPlugin.loader,
-				options: {
-					hmr: process.env.NODE_ENV === 'development',
-				},
-			},
-			'css-loader',
-			{
-				loader: 'sass-loader',
-				options: {
-					webpackImporter: false,
-					sassOptions: {
-						includePaths: [
-							path.resolve( __dirname, 'node_modules' ),
-						],
-						outputStyle: 'production' === process.env.NODE_ENV ? 'compressed' : 'nested',
-					},
-				},
-			},
-		],
-	},
-];
+	return () => {
+		const entryPoints = getOriginalEntryPoints();
 
-config.plugins = [
-	...( config.plugins || [] ),
-	new MiniCssExtractPlugin( {
-		filename: './style.css',
-	} ),
-];
+		const srcDirectory = path.join(
+			__dirname,
+			process.env.WP_SRC_DIRECTORY || 'src'
+		);
+		const [ entryFile ] = glob( `share-target/index.[jt]s?(x)`, {
+			absolute: true,
+			cwd: srcDirectory,
+		} );
+		if ( entryFile ) {
+			const entryName = entryFile
+				.replace( path.extname( entryFile ), '' )
+				.replace( srcDirectory + path.sep, '' );
 
-module.exports = config;
+			entryPoints[ entryName ] = entryFile;
+		}
+
+		return entryPoints;
+	};
+}
+
+module.exports = {
+	...config,
+	entry: getEntryPoints(),
+};

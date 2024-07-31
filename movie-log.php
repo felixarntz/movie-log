@@ -33,68 +33,49 @@ if ( ! defined( 'MOVIE_LOG_GENRE_TAXONOMY' ) ) {
  * @since 1.0.0
  */
 function register_blocks() {
-	if ( ! function_exists( 'register_block_type' ) ) {
-		return;
-	}
-
 	if ( ! defined( 'MOVIE_LOG_IMDB_API_KEY' ) ) {
 		add_action( 'admin_notices', __NAMESPACE__ . '\\missing_api_key_notice' );
 		return;
 	}
 
-	// Register server-side block types.
-	foreach ( glob( plugin_dir_path( __FILE__ ) . 'src/blocks/*/index.php' ) as $block_type_file ) {
-		$block_type = require $block_type_file;
+	register_block_type( __DIR__ . '/build/blocks/movie' );
 
-		register_block_type( $block_type['name'], $block_type['settings'] );
-	}
-
-	// Register block assets.
-	$script_dependencies = array( 'wp-polyfill' );
-	if ( file_exists( plugin_dir_path( __FILE__ ) . 'build/index.deps.json' ) ) {
-		$script_dependencies = json_decode( file_get_contents( plugin_dir_path( __FILE__ ) . 'build/index.deps.json' ) );
-	}
-
-	wp_register_script(
-		'movie-log-blocks',
-		plugin_dir_url( __FILE__ ) . 'build/index.js',
-		$script_dependencies,
-		'1.0.0',
-		true
-	);
-	wp_set_script_translations( 'movie-log-blocks', 'movie-log' );
 	$options = array(
 		'postType'      => MOVIE_LOG_POST_TYPE,
 		'genreTaxonomy' => MOVIE_LOG_GENRE_TAXONOMY,
 	);
-	wp_add_inline_script( 'movie-log-blocks', 'var movieLogSettings = ' . wp_json_encode( $options ) . ';', 'before' );
-
-	wp_register_style(
-		'movie-log-blocks',
-		plugin_dir_url( __FILE__ ) . 'build/style.css',
-		array(),
-		'1.0.0'
-	);
-
-	// Enqueue block assets.
-	add_action(
-		'enqueue_block_editor_assets',
-		function() {
-			wp_enqueue_script( 'movie-log-blocks' );
-			wp_enqueue_style( 'movie-log-blocks' );
-		},
-		11
-	);
-
-	add_action(
-		'enqueue_block_assets',
-		function() {
-			wp_enqueue_style( 'movie-log-blocks' );
-		},
-		11
-	);
+	wp_add_inline_script( 'movie-log-movie-editor-script', 'var movieLogSettings = ' . wp_json_encode( $options ) . ';', 'before' );
 }
 add_action( 'init', __NAMESPACE__ . '\\register_blocks', 100 );
+
+/**
+ * Loads the script for the Share Target plugin integration, if relevant.
+ *
+ * @since 1.0.0
+ */
+function load_share_target_integration() {
+	if ( ! class_exists( 'Felix_Arntz\WP_Share_Target\Plugin' ) ) {
+		return;
+	}
+
+	$script_args = require plugin_dir_path( __FILE__ ) . 'build/share-target/index.asset.php';
+
+	wp_register_script(
+		'movie-log-share-target',
+		plugin_dir_url( __FILE__ ) . 'build/share-target/index.js',
+		$script_args['dependencies'],
+		$script_args['version'],
+		true
+	);
+
+	add_action(
+		'enqueue_block_editor_assets',
+		function () {
+			wp_enqueue_script( 'movie-log-share-target' );
+		}
+	);
+}
+add_action( 'init', __NAMESPACE__ . '\\load_share_target_integration', 999 );
 
 /**
  * Modifies the block template of the movie log post type.
@@ -112,9 +93,9 @@ function modify_post_type_block_template() {
 	}
 
 	$post_type->template      = array(
-        array( 'movie-log/movie', array() ),
-    );
-    $post_type->template_lock = 'all';
+		array( 'movie-log/movie', array() ),
+	);
+	$post_type->template_lock = 'all';
 }
 add_action( 'init', __NAMESPACE__ . '\\modify_post_type_block_template' );
 
@@ -172,7 +153,7 @@ function register_rest_proxy() {
 		array(
 			array(
 				'methods'             => \WP_REST_Server::READABLE,
-				'callback'            => function( \WP_REST_Request $request ) {
+				'callback'            => function ( \WP_REST_Request $request ) {
 					if ( ! defined( 'MOVIE_LOG_IMDB_API_KEY' ) ) {
 						return new \WP_Error( 'missing_api_key', __( 'Missing IMDB API key.', 'movie-log' ), array( 'status' => 500 ) );
 					}
@@ -194,6 +175,7 @@ function register_rest_proxy() {
 						return new \WP_Error( 'request_failed', __( 'IMDB request failed.', 'movie-log' ), array( 'status' => 500 ) );
 					}
 
+					// phpcs:disable WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
 					$response = json_decode( wp_remote_retrieve_body( $response ) );
 					if ( ! is_object( $response ) || ! isset( $response->Response ) || ! $response->Response ) {
 						return rest_ensure_response( array() );
@@ -201,9 +183,10 @@ function register_rest_proxy() {
 
 					unset( $response->Response );
 
+					// phpcs:enable WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
 					return rest_ensure_response( array( $response ) );
 				},
-				'permission_callback' => function() {
+				'permission_callback' => function () {
 					return current_user_can( 'edit_posts' );
 				},
 				'args'                => array(
@@ -231,34 +214,10 @@ function register_rest_proxy() {
 			),
 			array(
 				'methods'             => \WP_REST_Server::READABLE,
-				'callback'            => function( \WP_REST_Request $request ) {
-					if ( ! defined( 'MOVIE_LOG_IMDB_API_KEY' ) ) {
-						return new \WP_Error( 'missing_api_key', __( 'Missing IMDB API key.', 'movie-log' ), array( 'status' => 500 ) );
-					}
-
-					$url = add_query_arg(
-						array(
-							'apikey' => MOVIE_LOG_IMDB_API_KEY,
-							'i'      => $request['id'],
-						),
-						'https://www.omdbapi.com/'
-					);
-
-					$response = wp_remote_get( $url );
-					if ( is_wp_error( $response ) ) {
-						return new \WP_Error( 'request_failed', __( 'IMDB request failed.', 'movie-log' ), array( 'status' => 500 ) );
-					}
-
-					$response = json_decode( wp_remote_retrieve_body( $response ) );
-					if ( ! is_object( $response ) || ! isset( $response->Response ) || ! $response->Response ) {
-						return new \WP_Error( 'not_found', __( 'No movie found for the given IMDB ID.', 'movie-log' ), array( 'status' => 404 ) );
-					}
-
-					unset( $response->Response );
-
-					return rest_ensure_response( $response );
+				'callback'            => function ( \WP_REST_Request $request ) {
+					return rest_ensure_response( fetch_movie_data_from_imdb( $request['id'] ) );
 				},
-				'permission_callback' => function() {
+				'permission_callback' => function () {
 					return current_user_can( 'edit_posts' );
 				},
 				'args'                => array(),
@@ -287,6 +246,8 @@ add_action( 'widgets_init', __NAMESPACE__ . '\\register_widget' );
 /**
  * Gets data for the movie identified by the given IMDB ID.
  *
+ * This uses a (cached) request to the IMDB API.
+ *
  * @since 1.0.0
  *
  * @param string $imdb_id Unique IMDB ID.
@@ -299,18 +260,52 @@ function get_movie_data( $imdb_id ) {
 
 	$data = get_transient( 'movie_log_imdb_' . $imdb_id );
 	if ( false === $data ) {
-		// Run an internal REST API request.
-		$request  = new \WP_REST_Request( 'GET', '/movie-log/v1/imdb-proxy/' . $imdb_id );
-		$response = rest_do_request( $request );
-		if ( $response->is_error() ) {
+		$data = fetch_movie_data_from_imdb( $imdb_id );
+		if ( \is_wp_error( $data ) ) {
 			return null;
 		}
-		$data = rest_get_server()->response_to_data( $response, false );
-
 		set_transient( 'movie_log_imdb_' . $imdb_id, $data, 4 * WEEK_IN_SECONDS );
 	}
 
 	return $data;
+}
+
+/**
+ * Fetches data for the movie identified by the given IMDB ID from the IMDB API.
+ *
+ * @since 1.0.0
+ *
+ * @param string $imdb_id Unique IMDB ID.
+ * @return object|\WP_Error IMDB data object, or WP_Error on failure.
+ */
+function fetch_movie_data_from_imdb( $imdb_id ) {
+	if ( ! defined( 'MOVIE_LOG_IMDB_API_KEY' ) ) {
+		return new \WP_Error( 'missing_api_key', __( 'Missing IMDB API key.', 'movie-log' ), array( 'status' => 500 ) );
+	}
+
+	$url = add_query_arg(
+		array(
+			'apikey' => MOVIE_LOG_IMDB_API_KEY,
+			'i'      => $imdb_id,
+		),
+		'https://www.omdbapi.com/'
+	);
+
+	$response = wp_remote_get( $url );
+	if ( is_wp_error( $response ) ) {
+		return new \WP_Error( 'request_failed', __( 'IMDB request failed.', 'movie-log' ), array( 'status' => 500 ) );
+	}
+
+	// phpcs:disable WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
+	$response = json_decode( wp_remote_retrieve_body( $response ) );
+	if ( ! is_object( $response ) || ! isset( $response->Response ) || ! $response->Response ) {
+		return new \WP_Error( 'not_found', __( 'No movie found for the given IMDB ID.', 'movie-log' ), array( 'status' => 404 ) );
+	}
+
+	unset( $response->Response );
+
+	// phpcs:enable WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
+	return $response;
 }
 
 /**
@@ -326,9 +321,9 @@ function query_most_watched_movies( $number = 5 ) {
 
 	$movies = get_transient( 'movie_log_most_watched_imdb_ids' );
 	if ( false === $movies ) {
-		$query = "SELECT meta_value, MAX( post_id ) AS latest_post_id, COUNT( * ) AS watch_count FROM {$wpdb->postmeta} WHERE meta_key = 'imdb_id' GROUP BY meta_value ORDER BY watch_count DESC, latest_post_id DESC LIMIT 20";
-
-		$results = (array) $wpdb->get_results( $query );
+		$results = (array) $wpdb->get_results(
+			"SELECT meta_value, MAX( post_id ) AS latest_post_id, COUNT( * ) AS watch_count FROM {$wpdb->postmeta} WHERE meta_key = 'imdb_id' GROUP BY meta_value ORDER BY watch_count DESC, latest_post_id DESC LIMIT 20"
+		);
 
 		$movies = array();
 		foreach ( $results as $result ) {

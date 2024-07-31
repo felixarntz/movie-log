@@ -1,9 +1,5 @@
-import { registerBlockType, createBlock } from '@wordpress/blocks';
+import { createBlock } from '@wordpress/blocks';
 import { select, dispatch } from '@wordpress/data';
-
-import movie from './blocks/movie';
-
-registerBlockType( movie.name, movie.settings );
 
 // Register share handler to allow sharing IMDB entity directly to editor.
 if ( global.wp.shareTarget && global.wp.shareTarget.registerShareHandler ) {
@@ -26,7 +22,8 @@ if ( global.wp.shareTarget && global.wp.shareTarget.registerShareHandler ) {
 			}
 
 			// Update post meta since the block requires it.
-			const meta = select( 'core/editor' ).getEditedPostAttribute( 'meta' );
+			const meta =
+				select( 'core/editor' ).getEditedPostAttribute( 'meta' );
 			dispatch( 'core/editor' ).editPost( {
 				meta: {
 					...meta,
@@ -36,13 +33,21 @@ if ( global.wp.shareTarget && global.wp.shareTarget.registerShareHandler ) {
 
 			// Update or create the actual block.
 			const blocks = select( 'core/block-editor' ).getBlocks();
-			const clientId = blocks?.find( ( block ) => block.name === 'movie-log/movie' )?.clientId;
+			const clientId = blocks?.find(
+				( block ) => block.name === 'movie-log/movie'
+			)?.clientId;
 			if ( clientId ) {
-				const attributes = select( 'core/block-editor' ).getBlockAttributes( clientId ) || {};
-				dispatch( 'core/block-editor' ).updateBlockAttributes( clientId, {
-					...attributes,
-					imdbId: matches[ 1 ],
-				} );
+				const attributes =
+					select( 'core/block-editor' ).getBlockAttributes(
+						clientId
+					) || {};
+				dispatch( 'core/block-editor' ).updateBlockAttributes(
+					clientId,
+					{
+						...attributes,
+						imdbId: matches[ 1 ],
+					}
+				);
 			} else {
 				dispatch( 'core/block-editor' ).insertBlocks( [
 					createBlock( 'movie-log/movie', {

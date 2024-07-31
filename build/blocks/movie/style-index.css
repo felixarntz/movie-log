@@ -1,0 +1,1 @@
+.movie-log-entry{display:block}.movie-log-entry-poster{background-color:rgba(0,0,0,.065);margin:0 auto 15px;padding:8px;width:200px}.movie-log-entry-poster a,.movie-log-entry-poster img{display:block}@media(min-width:640px){.movie-log-entry{align-items:flex-start;display:flex;justify-content:flex-start}.movie-log-entry-poster{margin:0 15px 0 0}.movie-log-entry-info{flex:1}}

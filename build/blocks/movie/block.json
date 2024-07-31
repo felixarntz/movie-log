@@ -1,0 +1,31 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "movie-log/movie",
+  "title": "Movie",
+  "icon": "video-alt",
+  "category": "widgets",
+  "description": "Display details about the movie you watched.",
+  "keywords": [
+    "movie"
+  ],
+  "textdomain": "movie-log",
+  "attributes": {
+    "imdbId": {
+      "type": "string",
+      "source": "meta",
+      "meta": "imdb_id"
+    },
+    "imdbReleaseDate": {
+      "type": "string",
+      "source": "meta",
+      "meta": "imdb_release_date"
+    }
+  },
+  "supports": {
+    "html": false
+  },
+  "editorScript": "file:./index.js",
+  "style": "file:./style-index.css",
+  "render": "file:./render.php"
+}
